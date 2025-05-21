@@ -1,11 +1,12 @@
 from blacksheep import Application, get, post, Request
-
 from app.config.settings import Settings
-
+from app.db.db import init_db
 from app.services.openrouter_service import OpenRouterService
+
 
 settings = Settings()
 app = Application()
+init_db()
 
 app.services.add_scoped(OpenRouterService)
 

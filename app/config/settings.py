@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     postgres_password: str
     environment: str
     openrouter_base_url: str
+    postgres_db: str
     
     class Config:
         env_file=".env"
