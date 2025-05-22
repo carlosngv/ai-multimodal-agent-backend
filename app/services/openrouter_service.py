@@ -10,10 +10,9 @@ from app.models.chat_message import ChatMessage
 from app.models.citizen import Citizen
 from sqlmodel import select
 
-
-
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
+from agno.models.openrouter import OpenRouter
 
 
 class OpenRouterService:
@@ -23,10 +22,9 @@ class OpenRouterService:
         try:
             print(self.settings.openrouter_key)
             self.agent = Agent(
-                model=OpenAIChat(
+                model=OpenRouter(
                     id="qwen/qwen2.5-vl-32b-instruct:free", 
                     api_key=self.settings.openrouter_key,
-                    base_url="https://openrouter.ai/api/v1",
                 ),
             )
         except ValueError as e:
