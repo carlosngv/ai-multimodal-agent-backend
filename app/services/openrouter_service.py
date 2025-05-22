@@ -2,61 +2,35 @@ import base64
 import mimetypes
 import fitz
 
-from typing import Any, AsyncGenerator
+from typing import AsyncGenerator
 from app.config.settings import Settings
-
-from agno.agent import Agent, RunResponse
-from agno.models.openai import OpenAIChat
-
+from app.models.session import Session
 from app.db.session import get_session
 from app.models.chat_message import ChatMessage
+from app.models.citizen import Citizen
+from sqlmodel import select
+
+
+
+from agno.agent import Agent
+from agno.models.openai import OpenAIChat
+
 
 class OpenRouterService:
     settings = Settings()
     
     def __init__(self):
         try:
+            print(self.settings.openrouter_key)
             self.agent = Agent(
                 model=OpenAIChat(
                     id="qwen/qwen2.5-vl-32b-instruct:free", 
-                    api_key="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", 
+                    api_key=self.settings.openrouter_key,
                     base_url="https://openrouter.ai/api/v1",
                 ),
             )
         except ValueError as e:
             print('ERROR:', e)
-    
-    async def chat_with_file(self, data):
-        file = data['file']
-        message = data['message']
-        print({ "message": message })
-
-        messages = [{"role": "user", "content": message}]
-        if file["file_name"].lower().endswith(".pdf"):
-            pdf_content = self.get_text_from_pdf(file["data"])
-            messages[0]["content"] += f" Contenido del PDF {file['file_name']}: {pdf_content}"
-        elif file["file_name"].lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
-            messages.append(self.build_image_message(file))
-        else:
-            messages[0]["content"] += f" [Archivo {file['file_name']} no es compatible, se ignora]"
-
-        run_response = await self.agent.arun(messages, stream=True)
-        full_response = ""
-        async for chunk in run_response:
-            if chunk.content:
-                full_response += chunk.content
-                yield chunk.content
-        if not full_response:
-            full_response = "[Sin respuesta del modelo]"
-        else:
-            full_response = full_response[:150]
-        for session in get_session():
-            msg = ChatMessage(
-                message=message,
-                response=full_response
-            )
-            session.add(msg)
-            session.commit()
 
     def get_text_from_pdf(self, base64_data: str) -> str:
         try:
@@ -83,7 +57,15 @@ class OpenRouterService:
             }
         }
     
-    async def chat(self, message: str, file: dict | None = None) -> AsyncGenerator[str, None]:
+    async def chat(self, message: str, citizen_email: str, file: dict | None = None, ) -> AsyncGenerator[str, None]:
+        
+        
+        for db in get_session():
+            citizen = self.get_or_create_citizen(db, citizen_email)
+            chat_session = self.create_session_for_citizen(db, citizen.id)
+            session_id = chat_session.id
+            break
+        
         messages = [
             {
                 "role": "user", 
@@ -116,8 +98,29 @@ class OpenRouterService:
             full_response = full_response[:150]
         for session in get_session():
             msg = ChatMessage(
+                session_id=session_id,
                 message=message,
                 response=full_response
             )
             session.add(msg)
             session.commit()
+
+
+    def get_or_create_citizen(self, db, email):
+        citizen = db.exec(select(Citizen).where(Citizen.email == email)).first()
+        if not citizen:
+            citizen = Citizen(email=email)
+            db.add(citizen)
+            db.commit()
+            db.refresh(citizen)
+        return citizen
+
+    def create_session_for_citizen(self, db, citizen_id):
+        session = db.exec(select(Session).where(Session.citizen_id == citizen_id)).first()
+        if not session:
+            session = Session(citizen_id=citizen_id)
+            db.add(session)
+            db.commit()
+            db.refresh(session)
+        
+        return session
