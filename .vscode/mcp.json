@@ -1,0 +1,16 @@
+{
+    "servers": {
+        "filesystem": {
+            "command": "docker",
+            "args": [
+                "run",
+                "-i",
+                "--rm",
+                "-v",
+                "/Users/carlosngv/Documents/dev/Projects:/local-directory",
+                "mcp/filesystem",
+                "/local-directory"
+            ]
+        }
+    }
+}

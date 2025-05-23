@@ -13,19 +13,24 @@ from sqlmodel import select
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from agno.models.openrouter import OpenRouter
+from agno.storage.postgres import PostgresStorage
 
 
 class OpenRouterService:
     settings = Settings()
+    DATABASE_URL = f"postgresql://{settings.postgres_user}:{settings.postgres_password}@localhost:5432/{settings.postgres_db}"
     
-    def __init__(self):
+    def create_agent(self, session_id):
         try:
-            print(self.settings.openrouter_key)
-            self.agent = Agent(
+            
+            return Agent(
                 model=OpenRouter(
                     id="qwen/qwen2.5-vl-32b-instruct:free", 
-                    api_key=self.settings.openrouter_key,
+                    api_key=self.settings.openrouter_key
                 ),
+                storage=PostgresStorage(table_name="agent_sessions", db_url=self.DATABASE_URL, schema='public'),
+                session_id=session_id,
+                add_history_to_messages=True,
             )
         except ValueError as e:
             print('ERROR:', e)
@@ -57,13 +62,13 @@ class OpenRouterService:
     
     async def chat(self, message: str, citizen_email: str, file: dict | None = None, ) -> AsyncGenerator[str, None]:
         
-        
+        session_id = 0
         for db in get_session():
             citizen = self.get_or_create_citizen(db, citizen_email)
             chat_session = self.create_session_for_citizen(db, citizen.id)
             session_id = chat_session.id
             break
-        
+        agent = self.create_agent(session_id)
         messages = [
             {
                 "role": "user", 
@@ -84,7 +89,7 @@ class OpenRouterService:
                 messages = f" [Archivo {file['file_name']} no es compatible, se ignora]"
         else:
             messages = message
-        run_response = await self.agent.arun(messages, stream=True)
+        run_response = await agent.arun(messages, stream=True)
         full_response = ""
         async for chunk in run_response:
             if chunk.content:

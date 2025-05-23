@@ -97,3 +97,7 @@ Este proyecto es un **prototipo funcional de agente de inteligencia artificial m
 - **Latencia:** El sistema está optimizado para respuestas rápidas (P95 < 800 ms).
 - **Persistencia:** Toda la información relevante se almacena en PostgreSQL para trazabilidad y análisis.
 - **Docker:** Se recomienda ejecutar la base de datos y Adminer en contenedores para facilitar el desarrollo y la portabilidad.
+
+### Configuración Local MCP - SystemFile
+```
+    docker run -it -dp 8082:8080 -v /Users/carlosngv/Documents/dev:/local-directory mcp/filesystem /local-directory

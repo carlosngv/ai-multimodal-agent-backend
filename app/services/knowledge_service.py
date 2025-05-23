@@ -25,17 +25,18 @@ class KnowledgeService:
         try:
             
             pdf_knowledge_base = PDFUrlKnowledgeBase(
-                urls=["https://agno-public.s3.amazonaws.com/recipes/ThaiRecipes.pdf"],
+                urls=["https://printtechnologies.org/standards/files/19005-1_faq.pdf"],
                 vector_db=PgVector(
                     table_name="recipes",
                     db_url=self.DATABASE_URL,
-                    search_type=SearchType.hybrid
+                    search_type=SearchType.hybrid,
+                    
                 ),
             )
             self.agent = Agent(
                 model=OpenRouter(
                     id="qwen/qwen2.5-vl-32b-instruct:free", 
-                    api_key=self.settings.openrouter_key,
+                    api_key=self.settings.openrouter_key
                 ),
                 knowledge=pdf_knowledge_base,
                 add_references=True,
