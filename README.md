@@ -36,7 +36,6 @@ Este proyecto es un **prototipo funcional de agente de inteligencia artificial m
 - **fitz (PyMuPDF):** Extracción de texto de PDFs.
 - **Pydantic Settings:** Manejo de configuración vía variables de entorno.
 
----
 
 ## Flujos Principales
 
@@ -62,7 +61,21 @@ Este proyecto es un **prototipo funcional de agente de inteligencia artificial m
 
 - Todas las interacciones (ciudadano, sesión, consulta, respuesta) se almacenan en PostgreSQL usando SQLModel.
 
----
+## Cliente de la Aplicación
+Aplicación web construida con React y Vite.
+- Uso de ShadCN + TalwindCSS para el diseño de los componentes
+- Uso del localstorage para manejar la sesión del usuario
+- Conversión de archivos a bse64 para enviar al servicio
+
+1. Pantalla principal, solicitud del correo eléctronico del usuario
+
+    ![Captura1](doc/SS1.png)
+
+
+2. Demostración de procesamiento de texto, análisis y carga de archivos en formato PDF.
+
+    ![Captura3](doc/SS3.png)
+
 
 ## Configuración
 
