@@ -1,4 +1,4 @@
-import asyncio
+import json
 import os
 import base64
 import mimetypes
@@ -58,11 +58,12 @@ class MCPService:
 
         try:
             async with MCPTools(server_params=server_params) as mcp_tools:
-
+                openrouter_api_key = os.getenv("OPENROUTER_KEY")
                 self.agent = Agent(
                     model=OpenRouter(
                         id="meta-llama/llama-3.3-8b-instruct:free", 
-                        api_key=self.settings.openrouter_key
+                        api_key=os.getenv("OPENROUTER_KEY")
+
                     ),
                     
                     tools=[mcp_tools],
@@ -76,8 +77,7 @@ class MCPService:
                         - Be concise and focus on relevant information\
                     """),
                     markdown=True,
-                    show_tool_calls=True,
-                    response_model=SystemFileResponse,
+                    # response_model=SystemFileResponse,
                 )                
         except ValueError as e:
             print('ERROR:', e)
@@ -89,7 +89,7 @@ class MCPService:
             command="npx",
             args=["-y", "@modelcontextprotocol/server-google-maps"],
             env={
-                "GOOGLE_MAPS_API_KEY": self.settings.google_maps_api_key
+                "GOOGLE_MAPS_API_KEY": os.getenv("GOOGLE_MAPS_API_KEY")
             }
         )
 
@@ -99,7 +99,8 @@ class MCPService:
                 self.agent = Agent(
                     model=OpenRouter(
                         id="meta-llama/llama-3.3-8b-instruct:free", 
-                        api_key=self.settings.openrouter_key
+                        
+                        api_key=os.getenv("OPENROUTER_KEY")
                     ),
                     
                     tools=[mcp_tools],
@@ -110,7 +111,6 @@ class MCPService:
                     """),
                     markdown=True,
                     response_model=Attraction,
-                    add_datetime_to_instructions=True,
                 )                
         except ValueError as e:
             print('ERROR:', e)
@@ -140,8 +140,8 @@ class MCPService:
             }
         }
     
-    async def chat(self, message: str, citizen_email: str ) -> AsyncGenerator[str, None]:
-        
+    async def chat(self, message: str, citizen_email: str ):
+        message = message.replace('MCP:', '')
         await self.run_agent()
         for db in get_session():
             citizen = self.get_or_create_citizen(db, citizen_email)
@@ -150,28 +150,20 @@ class MCPService:
             break        
 
         # run_response = self.run_agent(message)
-        run_response = await self.agent.arun(message, stream=True)
-        
-        full_response = ""
-        async for chunk in run_response:
-            if chunk.content:
-                full_response += chunk.content
-                yield chunk.content
-        if not full_response:
-            full_response = "[Sin respuesta del modelo]"
-        else:
-            full_response = full_response[:150]
+        run_response = await self.agent.arun(message)
         for session in get_session():
             msg = ChatMessage(
                 session_id=session_id,
                 message=message,
-                response=full_response
+                # response=json.dumps(run_response.content.dict(), ensure_ascii=False)
+                response=run_response.content
             )
             session.add(msg)
             session.commit()
+        return run_response.content
             
-    async def locate_attractions(self, message: str, citizen_email: str ) -> AsyncGenerator[str, None]:
-        
+    async def locate_attractions(self, message: str, citizen_email: str ):
+        message = message.replace('MCP:', '')
         await self.run_googlemaps_agent()
         for db in get_session():
             citizen = self.get_or_create_citizen(db, citizen_email)
@@ -182,23 +174,20 @@ class MCPService:
         # run_response = self.run_agent(message)
         run_response = await self.agent.arun(message, stream=True)
         
-        full_response = ""
-        async for chunk in run_response:
-            if chunk.content:
-                full_response += chunk.content
-                yield chunk.content
-        if not full_response:
-            full_response = "[Sin respuesta del modelo]"
-        else:
-            full_response = full_response[:150]
-        for session in get_session():
-            msg = ChatMessage(
-                session_id=session_id,
-                message=message,
-                response=full_response
-            )
-            session.add(msg)
-            session.commit()
+        try:
+            for session in get_session():
+                msg = ChatMessage(
+                    session_id=session_id,
+                    message=message,
+                    response=json.dumps(run_response.content.dict(), ensure_ascii=False)
+                )
+                session.add(msg)
+                session.commit()
+        except ValueError as e:
+            return "Problemas al consultar atracción"
+        
+        
+        return run_response.content
 
 
     def get_or_create_citizen(self, db, email):

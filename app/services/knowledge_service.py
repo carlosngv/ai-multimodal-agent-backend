@@ -25,18 +25,20 @@ class KnowledgeService:
         try:
             
             pdf_knowledge_base = PDFUrlKnowledgeBase(
-                urls=["https://printtechnologies.org/standards/files/19005-1_faq.pdf"],
+                urls=["https://printtechnologies.org/standards/files/19005-1_faq.pdf", "https://municipalidaddemomostenango.com/wp-content/uploads/2024/03/DIRECTORIO-TELEFONICO-2017-DE-LA-MUNICIPALIDAD-Y-DEPENDENCIA-QUE-LA-CONFORMAN.pdf"],
                 vector_db=PgVector(
                     table_name="recipes",
                     db_url=self.DATABASE_URL,
                     search_type=SearchType.hybrid,
+                    embedder=GeminiEmbedder(api_key=os.getenv('GEMINI_KEY'))
                     
                 ),
             )
             self.agent = Agent(
                 model=OpenRouter(
                     id="qwen/qwen2.5-vl-32b-instruct:free", 
-                    api_key=self.settings.openrouter_key
+                    api_key=os.getenv("OPENROUTER_KEY")
+                    
                 ),
                 knowledge=pdf_knowledge_base,
                 add_references=True,

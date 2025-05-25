@@ -18,8 +18,9 @@ Este proyecto es un **prototipo funcional de agente de inteligencia artificial m
 
 ---
 
-## Estructura del Proyecto
+## Diseño de la Aplicación
 
+![AppDesign](doc/DiagramaDiseño.png)
 
 
 ---
@@ -51,13 +52,19 @@ Este proyecto es un **prototipo funcional de agente de inteligencia artificial m
 - Las búsquedas semánticas se realizan usando embeddings generados por OpenAI, Gemini o el modelo específicado con OpenRouter.
 - Los resultados relevantes se devuelven al usuario.
 
-### 3. Persistencia
+### 3. Integración con Servidores MCP
+
+- Los documentos se indexan en PgVector (PostgreSQL).
+- Las búsquedas semánticas se realizan usando embeddings generados por OpenAI, Gemini o el modelo específicado con OpenRouter.
+- Los resultados relevantes se devuelven al usuario.
+
+### 4. Persistencia
 
 - Todas las interacciones (ciudadano, sesión, consulta, respuesta) se almacenan en PostgreSQL usando SQLModel.
 
 ---
 
-## Configuración y Despliegue
+## Configuración
 
 ### Variables de Entorno
 
@@ -84,9 +91,8 @@ Este proyecto es un **prototipo funcional de agente de inteligencia artificial m
 
 ## Endpoints Principales
 
-- `POST /chat`: Chat multimodal con el agente (texto, imágenes, PDFs).
-- `POST /faqs/chat`: Consulta de FAQs y reglamentos usando búsqueda semántica.
-- Otros endpoints pueden ser agregados según necesidades de integración o ampliación.
+- `POST /chat`: Chat multimodal con el agente (texto, imágenes, PDFs) e integración a consultas a través de base de datos vectorial.
+- `POST /mcp/chat`: Consultas a agente integrado con servidores MCP para validar el sistema de archivos y utilizar la Google Maps API.
 
 ---
 
@@ -94,7 +100,7 @@ Este proyecto es un **prototipo funcional de agente de inteligencia artificial m
 
 - **Modelos LLM:** Se recomienda usar modelos gratuitos (`:free`) de OpenRouter para evitar costos en prototipado.
 - **Embeddings:** Si no se cuenta con API key de OpenAI, se puede usar Gemini (requiere API key de Google AI Studio).
-- **Latencia:** El sistema está optimizado para respuestas rápidas (P95 < 800 ms).
+- **Latencia:** El sistema está optimizado para respuestas rápidas (P95 < 800 ms). Streaming de tokens al revolver respuestas.
 - **Persistencia:** Toda la información relevante se almacena en PostgreSQL para trazabilidad y análisis.
 - **Docker:** Se recomienda ejecutar la base de datos y Adminer en contenedores para facilitar el desarrollo y la portabilidad.
 

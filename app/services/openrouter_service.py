@@ -1,3 +1,4 @@
+import os
 import base64
 import mimetypes
 import fitz
@@ -26,7 +27,7 @@ class OpenRouterService:
             return Agent(
                 model=OpenRouter(
                     id="qwen/qwen2.5-vl-32b-instruct:free", 
-                    api_key=self.settings.openrouter_key
+                    api_key=os.getenv("OPENROUTER_KEY")
                 ),
                 storage=PostgresStorage(table_name="agent_sessions", db_url=self.DATABASE_URL, schema='public'),
                 session_id=session_id,

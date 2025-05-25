@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     openrouter_base_url: str
     postgres_db: str
     google_maps_api_key: str
+    gemini_key: str
     
     class Config:
         env_file=".env"

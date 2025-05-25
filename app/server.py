@@ -10,6 +10,15 @@ settings = Settings()
 app = Application()
 init_db()
 
+app.use_cors(
+    allow_methods="*",
+    allow_origins="*",
+    allow_headers="* Authorization",
+    max_age=300,
+)
+    
+
+
 app.services.add_scoped(OpenRouterService)
 app.services.add_scoped(KnowledgeService)
 app.services.add_scoped(MCPService)
